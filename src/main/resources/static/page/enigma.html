@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>恩格玛机</title>
+    <link rel="shortcut icon" href="../png/打字机.png">
+    <link rel="stylesheet" href="../js/layui/css/layui.css">
+</head>
+<style>
+    textarea {
+        spellcheck:"false"
+    }
+    .inputborder {
+        border: 1px solid #C2C2C2
+    }
+</style>
+<body>
+<div class="layui-layout layui-layout-admin">
+
+    <div class="layui-body">
+        <!-- 内容主体区域 -->
+        <!--<div style="padding: 15px;">内容主体区域。记得修改 layui.css 和 js 的路径</div>-->
+        <div class="layui-row layui-container">
+            <blockquote class="layui-elem-quote layui-col-xs12 layui-col-sm12 layui-col-md12" style="margin-top: 30px;">
+                <div class="layui-text">
+                    <ul>
+                        <li>一个模拟恩格玛机的小demo，来试试吧！</li>
+                    </ul>
+                </div>
+            </blockquote>
+
+            <form class="layui-form layui-col-xs12 layui-col-sm12 layui-col-md12" style="text-align:center;margin-top: 40px;">
+                <div class="layui-form-item layui-form-text layui-col-xs11 layui-col-sm11 layui-col-md11">
+                    <label class="layui-form-label">明文/暗文</label>
+                    <div class="layui-input-block">
+                        <textarea maxlength="200" name="rule" id="rule" placeholder="请输入内容" class="layui-textarea inputborder"></textarea>
+                    </div>
+                </div>
+
+                <div class="layui-form-item layui-col-xs11 layui-col-sm11 layui-col-md11">
+                    <label class="layui-form-label">密钥</label>
+                    <div class="layui-input-block">
+                        <input maxlength="5" type="text" name="key" id="key" required lay-verify="required" placeholder="请输入密钥" autocomplete="off"
+                               class="layui-input inputborder">
+                    </div>
+                </div>
+
+                <div class="layui-form-item layui-form-text layui-col-xs11 layui-col-sm11 layui-col-md11">
+                    <label class="layui-form-label">结果</label>
+                    <div class="layui-input-block">
+                        <textarea style="height: 250px;resize:none;" readonly maxlength="200" name="result" id="result" class="layui-textarea inputborder"></textarea>
+                    </div>
+                </div>
+
+                <div class="layui-form-item layui-col-xs12 layui-col-sm12 layui-col-md12" style="margin-top: 15px;">
+                    <button lay-submit class="layui-btn" lay-filter='encode'>加密</button>
+                    <button lay-submit class="layui-btn layui-btn-primary" lay-filter='decode'>解密</button>
+                </div>
+            </form>
+        </div>
+        <div class="layui-row" style="margin: 20px 10px;">
+            <div class="layui-col-xs12 layui-col-sm12 layui-col-md12">
+
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-footer" style="text-align: center">
+        <!-- 底部固定区域 -->
+        <p>脚本来源：
+            <a href="https://github.com/EsakaK/Enigma-Machine" target="_blank">EsakaK</a>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <a href="https://beian.miit.gov.cn/" target="_blank">皖ICP备2022007376</a>
+        </p>
+    </div>
+</div>
+<script src="../js/layui/layui.js"></script>
+<script>
+    var layer;
+    var $;
+    layui.use(function () {
+        layer = layui.layer;
+        var element = layui.element;
+        var util = layui.util;
+        $ = layui.$;
+        var form = layui.form;
+
+        //欢迎信息
+        layer.msg('欢迎啊！');
+
+        // 加密
+        form.on('submit(encode)', function (data) {
+            var data = data.field;
+            if (data.rule.trim() == '') {
+                layer.alert("请输入明文！");
+                return false;
+            }
+            if(!chineseCharacterCheck()) {
+                return false
+            }
+            data.flag = '1';
+            $.ajax({
+                url: "/EnigmaController/coding",
+                data: data,
+                type: "post",
+                dataType: "json",
+                success: function (res) {
+                    $("#result").val('');
+                    $("#result").val(res.darkText);
+                }
+            });
+            return false;
+        });
+
+        // 解密
+        form.on('submit(decode)', function (data) {
+            var data = data.field;
+            if (data.rule.trim() == '') {
+                layer.alert("请输入暗文！");
+                return false;
+            }
+            if(!chineseCharacterCheck()) {
+                return false
+            }
+            data.flag = '0';
+            $.ajax({
+                url: "/EnigmaController/coding",
+                data: data,
+                type: "post",
+                dataType: "json",
+                success: function (res) {
+                    $("#result").val('');
+                    $("#result").val(res.rule);
+                }
+            });
+            return false;
+        });
+    });
+
+    // 校验是否为纯纯的字母
+    function chineseCharacterCheck() {
+        var check = /^[A-Za-z\s!@#$%^&*()_+-=~`{}[\]\\\|:;"',./<>?]+$/;
+        var reg =/[\u4e00-\u9fa5！@#￥%……&*（）——+-=·~、|【】{}；’‘：“”，。、《》？]/g;
+        var rule = $("#rule").val().trim();
+        var key = $("#key").val().trim();
+        if (!check.test(rule) && rule!='') {
+            layer.alert("生而为恩格玛机，只认识英文字符的明文，我很抱歉T~T");
+            $("#rule").val(rule.replace(reg, ""));
+            return false;
+        } else if (!check.test(key) && key!='') {
+            layer.alert("生而为恩格玛机，只认识英文字符密钥，我很抱歉T~T");
+            $("#key").val(key.replace(reg, ""));
+            return false;
+        }
+        return true;
+    }
+</script>
+</body>
+</html>
